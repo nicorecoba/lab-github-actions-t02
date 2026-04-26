@@ -1,3 +1,3 @@
 # lab-github-actions-t02
 
-# prueba
+# prueba2
