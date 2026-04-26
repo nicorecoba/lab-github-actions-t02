@@ -22,7 +22,7 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-        - name: Imprimir contexto
+      - name: Imprimir contexto
         run: |
           echo "SHA: ${{ github.sha }}"
           echo "Branch: ${{ github.ref_name }}"
