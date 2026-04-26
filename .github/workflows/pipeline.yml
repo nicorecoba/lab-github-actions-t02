@@ -41,13 +41,13 @@ jobs:
           echo "value=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       # Construye la imagen Docker pero NO la sube a ningún registry
-      # El tag usa el SHA completo del commit (40 caracteres)
+      # El tag usa los primeros 7 caracteres del SHA
       - name: Build imagen (sin push)
         uses: docker/build-push-action@v5
         with:
           context: .                              # Usa el directorio raíz como contexto
           push: false                             # Solo build, sin push
-          tags: lab-github-actions:${{ github.sha }}
+          tags: ${{ env.APP_NAME}}:${{ steps.tag.outputs.value }}  # Tag con el SHA corto (7 caracteres)
 
   # ── JOB 2: SCAN ───────────────────────────────────────────────
   scan:
