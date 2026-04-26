@@ -9,6 +9,10 @@ on:
     branches: [main]          # En cada PR que apunta a main
   workflow_dispatch:           # También se puede disparar manualmente desde la UI
 
+env:                          # ← nivel workflow (disponible en todos los jobs)
+  APP_NAME: lab-github-actions
+  REGISTRY: docker.io
+
 # Lista de jobs del pipeline
 jobs:
 
@@ -29,6 +33,12 @@ jobs:
           echo "Evento: ${{ github.event_name }}"
           echo "Actor: ${{ github.actor }}"
           echo "Runner OS: ${{ runner.os }}"
+
+      - name: Generar tag
+        id: tag
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "value=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       # Construye la imagen Docker pero NO la sube a ningún registry
       # El tag usa el SHA completo del commit (40 caracteres)
