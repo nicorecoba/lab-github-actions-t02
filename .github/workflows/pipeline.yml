@@ -4,10 +4,10 @@ name: Pipeline DevOps
 # Cuándo se dispara el pipeline
 on:
   push:
-    branches: [main]          # En cada push a main
+    branches: [main, develop, staging]
   pull_request:
-    branches: [main]          # En cada PR que apunta a main
-  workflow_dispatch:           # También se puede disparar manualmente desde la UI
+    branches: [main, staging]
+  workflow_dispatch:
 
 env:                          # ← nivel workflow (disponible en todos los jobs)
   APP_NAME: lab-github-actions
@@ -155,3 +155,69 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ needs.build.outputs.image-tag }}
+
+  # ── JOB 5: DEPLOY DEV ─────────────────────────────────────────
+  deploy-dev:
+    name: Deploy → dev
+    needs: push-artifact
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Deploy a S3 (dev)
+        run: aws s3 sync ./ s3://${{ secrets.S3_BUCKET }} --delete
+
+  # ── JOB 6: DEPLOY STAGING ─────────────────────────────────────
+  deploy-staging:
+    name: Deploy → staging
+    needs: push-artifact
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Deploy a S3 (staging)
+        run: aws s3 sync ./ s3://${{ secrets.S3_BUCKET }} --delete
+
+  # ── JOB 7: DEPLOY PRODUCTION ──────────────────────────────────
+  deploy-production:
+    name: Deploy → production
+    needs: push-artifact
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Deploy a S3 (production)
+        run: aws s3 sync ./ s3://${{ secrets.S3_BUCKET }} --delete
